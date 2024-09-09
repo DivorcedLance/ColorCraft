@@ -1,11 +1,5 @@
 import { Box } from "./Box";
-
-interface Player {
-  id: number
-  colorId: number
-  position: { x: number, y: number }
-  score: number
-}
+import { Player } from "../types"
 
 export function Board({board, players, handleClick} : {
   board: number[][],

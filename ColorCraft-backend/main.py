@@ -1,22 +1,46 @@
 from flask import Flask, send_from_directory, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
+from flask_cors import CORS, cross_origin
 import json
+import random
 
-app = Flask(__name__)
-socketio = SocketIO(app)
+app = Flask(__name__, static_url_path='', static_folder='static')
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Configuración del estado inicial del juego
 initial_state = {
     "board": [[0] * 7 for _ in range(7)],
-    "turn": 0,
+    "turn": 1,
     "players": [
-        {"id": 1, "name": "Jugador 1", "colorId": 1, "position": {"x": 0, "y": 0}, "score": 0},
-        {"id": 2, "name": "Jugador 2", "colorId": 2, "position": {"x": 6, "y": 6}, "score": 0}
+        {"id": 1, "colorId": 1, "position": {"x": -1, "y": -1}, "score": 0},
+        {"id": 2, "colorId": 2, "position": {"x": -1, "y": -1}, "score": 0}
     ]
 }
 
 def apply_bot_move(state):
-    return state
+    new_state = state.copy()
+    
+    if (new_state["turn"] == 2):
+
+        # Initial move, selecting a random position
+        if new_state["players"][1]["position"]["x"] == -1:
+            newx = random.randint(0, 6)
+            newy = random.randint(0, 6)
+            while new_state["board"][newy][newx] == 0:
+                newx = random.randint(0, 6)
+                newy = random.randint(0, 6)
+            new_state["players"][1]["position"]["x"] = newx
+            new_state["players"][1]["position"]["y"] = newy
+            new_state["players"][1]["score"] += 1
+            new_state["board"][newy][newx] = 0
+            if new_state["players"][1]["colorId"] != state["board"][newy][newx]:
+                new_state["turn"] = 1
+            
+            return new_state
+
+    return new_state
 
 # Ruta para servir la página estática
 @app.route('/')
@@ -25,28 +49,33 @@ def index():
 
 # Ruta API para procesar un movimiento del bot
 @app.route('/move', methods=['POST'])
+@cross_origin()
 def bot_move():
     state = request.json
     new_state = apply_bot_move(state)
     return json.dumps(new_state)
 
 # Websockets para la gestión de salas y juego en tiempo real
-@socketio.on('join')
+@socketio.on('join_game')
 def on_join(data):
+    username = data['username']
     room = data['room']
     join_room(room)
-    send(f'{data["name"]} has entered the room.', room=room)
+    emit('game_status', {'message': f'{username} has joined the game.'}, room=room)
 
 @socketio.on('move')
 def on_move(data):
     room = data['room']
-    emit('move', data, room=room)
+    game_state = data['game_state']
+    emit('game_update', game_state, room=room, include_self=False)
 
-@socketio.on('leave')
+@socketio.on('leave_game')
 def on_leave(data):
+    username = data['username']
     room = data['room']
     leave_room(room)
-    send(f'{data["name"]} has left the room.', room=room)
+    emit('game_status', {'message': f'{username} has left the game.'}, room=room)
+
 
 if __name__ == '__main__':
     socketio.run(app)

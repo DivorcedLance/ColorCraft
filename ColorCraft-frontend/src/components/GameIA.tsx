@@ -14,7 +14,7 @@ const defaultBoard = [
   [1, 6, 7, 2, 5, 3, 4]
 ]
 
-export function Game() {
+export function GameIA() {
   const [board, setBoard] = useState(defaultBoard)
   const [players, setPlayers] = useState([
     { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0 },
@@ -26,6 +26,51 @@ export function Game() {
   useEffect(() => {
     startGame()
   }, [])
+
+  useEffect(() => {
+    if (turn === 2) {
+      requestMoveToServer()
+    }
+  }, [turn])
+
+  function requestMoveToServer() {
+    // Prepara el estado del juego para enviar al servidor
+    const gameState = {
+      board: board,
+      turn: turn,
+      players: players.map(player => ({
+        id: player.id,
+        colorId: player.colorId,
+        position: player.position,
+        score: player.score
+      }))
+    };
+  
+    fetch('http://127.0.0.1:5000/move', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(gameState)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+      // Actualiza el estado del juego con la respuesta del servidor
+      setBoard(data.board);
+      setPlayers(data.players.map((player: Player) => ({
+        id: player.id,
+        colorId: player.colorId,
+        position: player.position,
+        score: player.score
+      })));
+      setTurn(data.turn);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  }
+  
 
   function shuffleBoard() {
     const newBoard = defaultBoard.map(row => [...row])
