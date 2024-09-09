@@ -5,7 +5,7 @@ import { Box } from "./Box";
 import { Preload } from "./Preload";
 import { Player } from "../types";
 
-const socket = io('http://localhost:5000');
+const socket = io('https://colorcraft-w0ic.onrender.com');
 
 const defaultBoard = [
   [2, 5, 3, 4, 1, 6, 7],

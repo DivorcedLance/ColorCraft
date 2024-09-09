@@ -1,6 +1,7 @@
 from flask import Flask, send_from_directory, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 from flask_cors import CORS, cross_origin
+from gevent.pywsgi import WSGIServer
 import json
 import random
 
@@ -78,4 +79,9 @@ def on_leave(data):
 
 
 if __name__ == '__main__':
+    # Debug/Development
+    # app.run(debug=True, host="0.0.0.0", port="5000")
+    # Production
+    http_server = WSGIServer(('', 5000), app)
+    http_server.serve_forever()
     socketio.run(app)
