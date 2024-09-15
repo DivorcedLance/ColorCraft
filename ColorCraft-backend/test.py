@@ -1,24 +1,20 @@
-from flask import Flask, send_from_directory, request
-from flask_socketio import SocketIO, join_room, leave_room, send, emit
-from flask_cors import CORS, cross_origin
-from gevent.pywsgi import WSGIServer
-import json
 import random
 
-app = Flask(__name__, static_url_path='', static_folder='static')
-cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
-socketio = SocketIO(app, cors_allowed_origins="*")
+def get_adjacent_cells(board, x, y):
+    adjacent_cells = []
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            if (i != 0 or j != 0) and 0 <= x + i < len(board) and 0 <= y + j < len(board[0]):
+                adjacent_cells.append((x + i, y + j))
+    return adjacent_cells
 
-# Configuración del estado inicial del juego
-initial_state = {
-    "board": [[0] * 7 for _ in range(7)],
-    "turn": 1,
-    "players": [
-        {"id": 1, "colorId": 1, "position": {"x": -1, "y": -1}, "score": 0},
-        {"id": 2, "colorId": 2, "position": {"x": -1, "y": -1}, "score": 0}
-    ]
-}
+def get_color_positions(board, colorid):
+    color_positions = []
+    for y in range(len(board)):
+        for x in range(len(board[0])):
+            if board[y][x] == colorid:
+                color_positions.append((x, y))
+    return color_positions
 
 def take_chip_move_player(state, x, y):
     state_copy = state.copy()
@@ -43,22 +39,6 @@ def take_chip_move_player(state, x, y):
 
 def get_color(board, x, y):
     return board[y][x]
-
-def get_adjacent_cells(board, x, y):
-    adjacent_cells = []
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            if (i != 0 or j != 0) and 0 <= x + i < len(board) and 0 <= y + j < len(board[0]):
-                adjacent_cells.append((x + i, y + j))
-    return adjacent_cells
-
-def get_color_positions(board, colorid):
-    color_positions = []
-    for y in range(len(board)):
-        for x in range(len(board[0])):
-            if board[y][x] == colorid:
-                color_positions.append((x, y))
-    return color_positions
 
 def get_possible_moves_aux(board, x, y, colorid):
     possible_moves = []
@@ -121,47 +101,42 @@ def apply_bot_move(state):
 
     return new_state
 
-# Ruta para servir la página estática
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
 
-# Ruta API para procesar un movimiento del bot
-@app.route('/move', methods=['POST'])
-@cross_origin()
-def bot_move():
-    state = request.json
-    new_state = apply_bot_move(state)
-    return json.dumps(new_state)
+if __name__ == "__main__":
 
-# Websockets para la gestión de salas y juego en tiempo real
-@socketio.on('join_game')
-def on_join(data):
-    username = data['username']
-    room = data['room']
-    join_room(room)
-    emit('game_status', {'message': f'{username} has joined the game.'}, room=room)
+    def print_state(state):
+        board = state['board']
+        players = state['players']
 
-@socketio.on('move')
-def on_move(data):
-    room = data['room']
-    game_state = data['game_state']
-    emit('game_update', game_state, room=room, include_self=False)
+        for row in board:
+            print(row)
 
-@socketio.on('leave_game')
-def on_leave(data):
-    username = data['username']
-    room = data['room']
-    leave_room(room)
-    emit('game_status', {'message': f'{username} has left the game.'}, room=room)
+        print(state['turn'])
+        for player in players:
+            print(player)
 
+    test_board = [
+    [2, 5, 3, 4, 1, 6, 7],
+    [4, 1, 6, 7, 2, 5, 3],
+    [7, 2, 5, 3, 4, 1, 6],
+    [3, 4, 1, 6, 7, 2, 5],
+    [6, 7, 2, 5, 3, 4, 1],
+    [5, 3, 4, 1, 6, 7, 2],
+    [1, 6, 7, 2, 5, 3, 4]
+    ]
 
-if __name__ == '__main__':
-    # Debug/Development
-    app.run(debug=True, host="0.0.0.0", port="5000")
+    test_state = {
+    "board": test_board,
+    "turn": 1,
+    "players": [
+        {"id": 1, "colorId": 1, "position": {"x": -1, "y": -1}, "score": 0},
+        {"id": 2, "colorId": 2, "position": {"x": -1, "y": -1}, "score": 0}
+    ]
+    }
 
-    # Production
-    # http_server = WSGIServer(('', 5000), app)
-    # http_server.serve_forever()
-    
-    socketio.run(app)
+    print_state(test_state)
+    print("---")
+    for _ in range(10):
+        test_state = apply_bot_move(test_state)
+        print_state(test_state)
+        print("---")
