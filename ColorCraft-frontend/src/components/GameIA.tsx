@@ -145,7 +145,7 @@ export function GameIA() {
       }))
     };
   
-    fetch('http://127.0.0.1:5000/move', {
+    fetch('https://colorcraft-w0ic.onrender.com/move', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
