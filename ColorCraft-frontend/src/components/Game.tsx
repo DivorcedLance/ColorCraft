@@ -17,8 +17,8 @@ const defaultBoard = [
 export function Game() {
   const [board, setBoard] = useState(defaultBoard)
   const [players, setPlayers] = useState([
-    { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0 },
-    { id: 2, colorId: 4, position: { x: -1, y: -1 }, score: 0 }
+    { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 },
+    { id: 2, colorId: 4, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 }
   ])
   
   const [turn, setTurn] = useState(1)
@@ -41,8 +41,8 @@ export function Game() {
   function startGame() {
     shuffleBoard()
     setPlayers([
-      { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0 },
-      { id: 2, colorId: 4, position: { x: -1, y: -1 }, score: 0 }
+      { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 },
+      { id: 2, colorId: 4, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 }
     ])
     setTurn(1)
   }

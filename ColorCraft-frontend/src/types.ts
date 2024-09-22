@@ -3,4 +3,5 @@ export interface Player {
   colorId: number
   position: { x: number, y: number }
   score: number
+  possibleMoves: number
 }
