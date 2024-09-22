@@ -40,7 +40,7 @@ export function GameIA() {
       // Wait 0.5 second
       setTimeout(() => {
         requestMoveToServer()
-      }, 1000)
+      }, 500)
     }
   }, [turn])
 
@@ -50,7 +50,7 @@ export function GameIA() {
       // Wait 0.5 second
       setTimeout(() => {
         requestMoveToServer()
-      }, 1000)
+      }, 500)
     }
   }, [turn, repeatTurn])
 
