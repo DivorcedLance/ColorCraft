@@ -58,13 +58,13 @@ export const GameLobby: React.FC = () => {
           <div className='flex flex-col items-center gap-4'>
             <button
               onClick={handleCreateRoom}
-              className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-96'
+              className='bg-[#0094BC] hover:bg-[#0094BC] text-white font-bold py-2 px-4 rounded w-96'
             >
               Create Room
             </button>
             <button
               onClick={handleJoinRandomRoom}
-              className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-96'
+              className='bg-[#F83313] hover:bg-[#F83313] text-white font-bold py-2 px-4 rounded w-96'
             >
               Join Random Room
             </button>
@@ -78,7 +78,7 @@ export const GameLobby: React.FC = () => {
               />
               <button
                 onClick={handleJoinWithCode}
-                className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-64'
+                className='bg-[#8BC240] hover:bg-[#8BC240] text-white font-bold py-2 px-4 rounded w-64'
               >
                 Join Room with Code
               </button>

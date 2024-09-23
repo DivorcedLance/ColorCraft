@@ -28,20 +28,20 @@ function Menu() {
   return (
     <div className='text-white flex flex-col items-center space-y-4'>
       <Preload />
-      <h1 className='text-2xl'>Elige tu modo de juego</h1>
+      <h1 className='text-2xl font-bold'>Elige tu modo de juego</h1>
       <Link to="/solo">
-        <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
-          Solo (GameIA)
+        <button className='bg-[#0094BC] hover:bg-[#0094BC] text-white font-bold py-2 px-4 rounded w-96'>
+          Solo (vs IA)
         </button>
       </Link>
       <Link to="/local">
-        <button className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded'>
-          Multiplayer Local (Game)
+        <button className='bg-[#F83313] hover:bg-[#F83313] text-white font-bold py-2 px-4 rounded w-96'>
+          Multiplayer Local
         </button>
       </Link>
       <Link to="/multiplayer">
-        <button className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded'>
-          Multiplayer (GameLobby)
+        <button className='bg-[#8BC240] hover:bg-[#8BC240] text-white font-bold py-2 px-4 rounded w-96'>
+          Multiplayer Online
         </button>
       </Link>
     </div>
