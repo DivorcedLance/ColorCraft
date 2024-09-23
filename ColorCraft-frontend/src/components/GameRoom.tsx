@@ -1,161 +1,62 @@
-import { useEffect, useState } from "react";
-import io from "socket.io-client";
-import { Board } from "./Board";
-import { Box } from "./Box";
-import { Preload } from "./Preload";
-import { Player } from "../types";
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
-const socket = io('https://colorcraft-w0ic.onrender.com');
+import { socket } from '../socket'
 
-const defaultBoard = [
-  [2, 5, 3, 4, 1, 6, 7],
-  [4, 1, 6, 7, 2, 5, 3],
-  [7, 2, 5, 3, 4, 1, 6],
-  [3, 4, 1, 6, 7, 2, 5],
-  [6, 7, 2, 5, 3, 4, 1],
-  [5, 3, 4, 1, 6, 7, 2],
-  [1, 6, 7, 2, 5, 3, 4]
-];
-
-export function GameRoom() {
-  const [board, setBoard] = useState(defaultBoard);
-  const [players, setPlayers] = useState([
-    { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 },
-    { id: 2, colorId: 4, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 }
-  ]);
-  const [turn, setTurn] = useState(1);
-  const [room] = useState(10);
-  const [username] = useState(`Player ${Math.floor(Math.random() * 100)}`);
-  const [updating, setUpdating] = useState(false);
+export const GameRoom: React.FC = () => {
+  const location = useLocation();
+  const { username, player_id, room_code } = location.state;
+  const [gameState, setGameState] = useState("");
 
   useEffect(() => {
-    socket.emit('join_game', { room,  username});
-
-    socket.on('game_update', (data) => {
-      setBoard(data.board);
-      setPlayers(data.players);
-      setTurn(data.turn);
+    // Listen for game updates
+    socket.on('game_status', (newState) => {
+      console.log("game_status")
+      console.log(newState.message)
     });
-
-    return () => {
-      socket.emit('leave_game', { room });
-    };
-  }, [room]);
-
-  useEffect(() => {
-    startGame();
   }, []);
 
   useEffect(() => {
-    if (!updating) return;
-    socket.emit('move', { room, game_state: {board, players, turn} });
-    setUpdating(false);
-  }, [updating]);
+    // Listen for game updates
+    socket.on('game_update', (newState) => {
+      console.log("game_update")
+      console.log(newState)
+      setGameState(newState);
+    });
+  }, []);
 
-  const startGame = () => {
-    shuffleBoard();
-    setPlayers([
-      { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 },
-      { id: 2, colorId: 4, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 }
-    ]);
-    setTurn(1);
-  };
-
-  function tryMovePlayer(player: Player, x: number, y: number) {
-    // Debe ser el turno del jugador
-    if (player.id !== turn) return
-
-    // La nueva posición debe tener alguna chip
-    if (board[y][x] == 0) return
-    
-    // No se puede mover a la misma posición
-    if (player.position.x === x && player.position.y === y) return
-
-    // Solo se puede mover a una posición adyacente
-    if (Math.abs(player.position.x - x) > 1 || Math.abs(player.position.y - y) > 1) {
-      // Con la excepción de que la nueva posición tenga una chip del mismo color
-      if (board[y][x] !== player.colorId) return
-    }
-
-    movePlayer(player, x, y)
-    takeChip(player, x, y)
-  }
-
-  const shuffleBoard = () => {
-    const newBoard = defaultBoard.map(row => [...row]);
-    for (let i = newBoard.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newBoard[i], newBoard[j]] = [newBoard[j], newBoard[i]];
-    }
-    setBoard(newBoard);
-  };
-
-  const handleClick = (x: number, y: number) => {
-    const player = players.find(p => p.id === turn);
-    if (!player) return;
-
-    if (player.position.x === -1 && player.position.y === -1) {
-      movePlayer(player, x, y);
-      takeChip(player, x, y);
-    } else {
-      tryMovePlayer(player, x, y);
-    }
-    setUpdating(true);
-  };
-
-  const movePlayer = (player: Player, x: number, y: number) => {
-    setPlayers(prevPlayers =>
-      prevPlayers.map(p => {
-        if (p.id === player.id) {
-          return { ...p, position: { x, y } };
-        }
-        return p;
-      })
-    );
-  };
-
-  const takeChip = (player: Player, x: number, y: number) => {
-    const newBoard = board.map(row => [...row]);
-    newBoard[y][x] = 0;
-    setBoard(newBoard);
-
-    setPlayers(prevPlayers =>
-      prevPlayers.map(p => {
-        if (p.id === player.id) {
-          return { ...p, score: p.score + 1 };
-        }
-        return p;
-      })
-    );
-
-    if (board[y][x] !== player.colorId) {
-      setTurn(turn === 1 ? 2 : 1);
-    }
+  const handleMove = () => {
+    // Emit the content of the textarea as the game move
+    socket.emit('move', { room_code, game_state: gameState });
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <Preload />
-      <h1 className="text-white text-4xl font-bold">{username}</h1>
-      <div className="flex flex-col items-center font-bold text-xl">
-        <button className="bg-white m-4 p-2 rounded-md" onClick={startGame}>New Game</button>
-        <Board board={board} players={players} handleClick={handleClick} />
-        <div className="flex flex-row items-center">
-          <div className="text-white">Player {turn}'s turn</div>
-          <button className="bg-white m-4 p-2 rounded-md" onClick={() => setTurn(turn === 1 ? 2 : 1)}>End Turn</button>
-        </div>
-        <div className="flex flex-row items-center">
-          {players.map(player => (
-            <div key={player.id} className="flex flex-col items-center m-4">
-              <Box chipId={player.colorId} borderId={
-                (player.id !== turn) ? 0 : player.colorId
-              } onClick={() => {}} />
-              <div className="text-white">Player {player.id}</div>
-              <div className="text-white">Score: {player.score}</div>
-            </div>
-          ))}
-        </div>
+    <div className='text-white'>
+      <h1 className='text-2xl'>Game Room: {room_code}</h1>
+      <p>Username: {username}</p>
+      <p>Player ID: {player_id}</p>
+      <div>
+        <h2>Game State</h2>
+        <pre>{JSON.stringify(gameState, null, 2)}</pre>
       </div>
+
+      <div className='mt-4'>
+        <h3>Simulate Game State</h3>
+        <textarea
+          className='w-full p-2 border text-black border-gray-300 rounded'
+          rows={5}
+          value={gameState}
+          onChange={(e) => setGameState(e.target.value)}
+          placeholder="Enter game state simulation here..."
+        />
+      </div>
+
+      <button
+        onClick={handleMove}
+        className='mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
+      >
+        Make a Move
+      </button>
     </div>
   );
-}
+};

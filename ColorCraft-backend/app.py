@@ -4,6 +4,7 @@ from flask_cors import CORS, cross_origin
 from gevent.pywsgi import WSGIServer
 import json
 import random
+import string
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 cors = CORS(app)
@@ -132,7 +133,6 @@ def evaluate_state(state):
 
 
 def apply_bot_move(state, difficulty):
-    print(difficulty)
     possible_states = get_possible_states(state)
 
     if not possible_states:
@@ -144,7 +144,6 @@ def apply_bot_move(state, difficulty):
         best_state = max(possible_states, key=evaluate_state)
         new_state = best_state
 
-    print(new_state)
     return new_state
 
 # Ruta para servir la página estática
@@ -174,29 +173,86 @@ def bot_move():
 # Websockets para la gestión de salas y juego en tiempo real
 
 
+rooms = {}  # Store room data with player info
+max_players = 2  # Limit the number of players per room
+
+def generate_room_code():
+    """Generate a unique 5-character room code."""
+    while True:
+        room_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        if room_code not in rooms:
+            return room_code
+
+@socketio.on('create_room')
+def on_create_room(data):
+    username = data['username']
+    room_code = generate_room_code()
+    
+    rooms[room_code] = {
+        'players': {1: username},  # Assign ID 1 to the first player
+        'game_state': {}
+    }
+    
+    join_room(room_code)
+    emit('room_created', {'room_code': room_code, 'player_id': 1})
+
 @socketio.on('join_game')
 def on_join(data):
     username = data['username']
-    room = data['room']
-    join_room(room)
-    emit('game_status', {
-         'message': f'{username} has joined the game.'}, room=room)
+    room_code = data.get('room_code')
 
+    # If room_code is None, try to join a random available room
+    if not room_code:
+        available_rooms = [code for code, room in rooms.items() if len(room['players']) < max_players]
+        if available_rooms:
+            room_code = random.choice(available_rooms)
+        else:
+            # If no rooms are available, create a new room
+            room_code = generate_room_code()
+            rooms[room_code] = {
+                'players': {1: username},
+                'game_state': {}
+            }
+            join_room(room_code)
+            emit('room_created', {'room_code': room_code, 'player_id': 1})
+            return
+
+    # Join a specific room
+    if room_code in rooms and len(rooms[room_code]['players']) < max_players:
+        player_id = 2 if 1 in rooms[room_code]['players'] else 1
+        rooms[room_code]['players'][player_id] = username
+        join_room(room_code)
+
+        emit('joined_room', {'room_code': room_code, 'player_id': player_id})
+        emit('game_status', {'message': f'{username} has joined the game.'}, room=room_code)
+    else:
+        emit('error', {'message': 'Room is full or does not exist.'})
 
 @socketio.on('move')
 def on_move(data):
-    room = data['room']
+    room_code = data['room_code']
     game_state = data['game_state']
-    emit('game_update', game_state, room=room, include_self=False)
-
+    
+    if room_code in rooms:
+        rooms[room_code]['game_state'] = game_state
+        emit('game_update', game_state, room=room_code, include_self=False)
 
 @socketio.on('leave_game')
 def on_leave(data):
     username = data['username']
-    room = data['room']
-    leave_room(room)
-    emit('game_status', {
-         'message': f'{username} has left the game.'}, room=room)
+    room_code = data['room_code']
+    
+    if room_code in rooms:
+        for player_id, name in rooms[room_code]['players'].items():
+            if name == username:
+                del rooms[room_code]['players'][player_id]
+                break
+        leave_room(room_code)
+        emit('game_status', {'message': f'{username} has left the game.'}, room=room_code)
+        
+        # If no players left, remove the room
+        if not rooms[room_code]['players']:
+            del rooms[room_code]
 
 
 if __name__ == '__main__':
