@@ -188,7 +188,8 @@ export function GameIA() {
         </div>
 
         <Board board={board} players={players} handleClick={handleClick} />
-        <div className="flex flex-row items-center">
+
+        <div className="flex flex-row items-center mt-2">
           <div className="text-white">
             {
               (result == -1) ? turn === 1 ? 'Player 1 turn' : 'Player 2 turn' 

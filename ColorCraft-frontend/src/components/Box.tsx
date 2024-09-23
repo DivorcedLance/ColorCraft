@@ -16,7 +16,12 @@ export function Box({ chipId, onClick, borderId } : { chipId: number, onClick: (
   const borderStyle = `border-[${colorId[borderId]}]`
 
   return (
-    <button className={`flex items-center justify-center h-20 w-20 rounded-lg bg-[#fff] border-8 ${borderStyle}`}
+    <button className={`flex items-center justify-center rounded-lg bg-[#fff] 
+      lg:h-20 lg:w-20 lg:border-8 
+      md:h-14 md:w-14 md:border-[6px] 
+      sm:h-12 sm:w-12 sm:border-4 
+      h-10 w-10 border-[3px]
+      ${borderStyle}`}
     onClick={onClick}>
       <Chip color={colorId[chipId]} />
     </button>

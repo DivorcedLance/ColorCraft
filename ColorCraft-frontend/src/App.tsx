@@ -9,16 +9,14 @@ import { Preload } from './components/Preload';
 function App() {
   return (
     <Router>
-      <div className='bg-[black] h-full'>
-        <div className='flex items-center justify-center h-screen'>
-          <Routes>
-            <Route path="/" element={<Menu />} />
-            <Route path="/solo" element={<GameIA />} />
-            <Route path="/local" element={<GameLocal />} />
-            <Route path="/multiplayer" element={<GameLobby />} />
-            <Route path="/room/:room_code" element={<GameRoom />} />
-          </Routes>
-        </div>
+      <div className='flex items-center justify-center h-full'>
+        <Routes>
+          <Route path="/" element={<Menu />} />
+          <Route path="/solo" element={<GameIA />} />
+          <Route path="/local" element={<GameLocal />} />
+          <Route path="/multiplayer" element={<GameLobby />} />
+          <Route path="/room/:room_code" element={<GameRoom />} />
+        </Routes>
       </div>
     </Router>
   );
@@ -26,7 +24,8 @@ function App() {
 
 function Menu() {
   return (
-    <div className='text-white flex flex-col items-center space-y-4'>
+    <div className='text-white flex flex-col items-center gap-2'>
+      <h1 className='text-5xl font-bold'>ColorCraft</h1>
       <Preload />
       <h1 className='text-2xl font-bold'>Elige tu modo de juego</h1>
       <Link to="/solo">
