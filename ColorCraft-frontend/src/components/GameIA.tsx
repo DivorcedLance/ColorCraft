@@ -4,7 +4,7 @@ import { Box } from "./Box"
 import { Player } from "../types"
 import Confetti from 'react-confetti';
 
-import { countAvailableMoves } from '../logic/gameLogic'
+import { countAvailableMoves, playerCanMove, shuffleBoard } from '../logic/gameLogic'
 
 const defaultBoard = [
   [2, 5, 3, 4, 1, 6, 7],
@@ -36,7 +36,7 @@ export function GameIA() {
   }, [])
 
   useEffect(() => {
-    if (turn === 2) {
+    if (turn === 2 && players[1].possibleMoves != 0) {
       // Wait 0.5 second
       setTimeout(() => {
         requestMoveToServer()
@@ -45,7 +45,7 @@ export function GameIA() {
   }, [turn])
 
   useEffect(() => {
-    if (turn === 2 && repeatTurn) {
+    if (turn === 2 && repeatTurn && players[1].possibleMoves != 0) {
       setRepeatTurn(false)
       // Wait 0.5 second
       setTimeout(() => {
@@ -115,38 +115,10 @@ export function GameIA() {
       setTurn(1)
     }
   }, [board, players])
-  
-
-  function shuffleBoard() {
-    const flatBoard: number[] = []
-  
-    // Llenar el tablero con 7 de cada número del 1 al 7
-    for (let num = 1; num <= 7; num++) {
-      for (let count = 0; count < 7; count++) {
-        flatBoard.push(num)
-      }
-    }
-  
-    // Barajar el tablero plano
-    for (let i = flatBoard.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      const temp = flatBoard[i]
-      flatBoard[i] = flatBoard[j]
-      flatBoard[j] = temp
-    }
-  
-    // Reconstruir el tablero 7x7
-    const newBoard = []
-    for (let i = 0; i < 7; i++) {
-      newBoard.push(flatBoard.slice(i * 7, i * 7 + 7))
-    }
-  
-    setBoard(newBoard)
-  }
 
 
   function startGame() {
-    shuffleBoard()
+    setBoard(shuffleBoard())
 
     setPlayers([
       { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 },
@@ -166,27 +138,10 @@ export function GameIA() {
       // Si el jugador no tiene posición asignada, dejarle tomar cualquier ficha del tablero
       takeChip(player, x, y)
     } else {
-      tryMovePlayer(player, x, y)
+      if (playerCanMove(player, turn, board, x, y)) {
+        takeChip(player, x, y)
+      }
     }
-  }
-
-  function tryMovePlayer(player: Player, x: number, y: number) {
-    // Debe ser el turno del jugador
-    if (player.id !== turn) return
-
-    // La nueva posición debe tener alguna chip
-    if (board[y][x] == 0) return
-    
-    // No se puede mover a la misma posición
-    if (player.position.x === x && player.position.y === y) return
-
-    // Solo se puede mover a una posición adyacente
-    if (Math.abs(player.position.x - x) > 1 || Math.abs(player.position.y - y) > 1) {
-      // Con la excepción de que la nueva posición tenga una chip del mismo color
-      if (board[y][x] !== player.colorId) return
-    }
-
-    takeChip(player, x, y)
   }
 
   function takeChip(player: Player, x: number, y: number) {
