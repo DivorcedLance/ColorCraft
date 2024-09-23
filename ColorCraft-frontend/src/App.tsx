@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css';
 import { GameIA } from './components/GameIA';
-import { Game } from './components/Game';
+import { GameLocal } from './components/GameLocal';
 import { GameLobby } from './components/GameLobby';
 import { GameRoom } from './components/GameRoom';
+import { Preload } from './components/Preload';
 
 function App() {
   return (
@@ -13,9 +14,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Menu />} />
             <Route path="/solo" element={<GameIA />} />
-            <Route path="/local" element={<Game />} />
+            <Route path="/local" element={<GameLocal />} />
             <Route path="/multiplayer" element={<GameLobby />} />
-            <Route path="/room/:room_code" element={<GameRoom />} /> {/* Route for GameRoom */}
+            <Route path="/room/:room_code" element={<GameRoom />} />
           </Routes>
         </div>
       </div>
@@ -26,6 +27,7 @@ function App() {
 function Menu() {
   return (
     <div className='text-white flex flex-col items-center space-y-4'>
+      <Preload />
       <h1 className='text-2xl'>Elige tu modo de juego</h1>
       <Link to="/solo">
         <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>

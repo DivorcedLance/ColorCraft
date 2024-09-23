@@ -3,9 +3,6 @@ import { Board } from "./Board"
 import { Box } from "./Box"
 import { Player } from "../types"
 import Confetti from 'react-confetti';
-import { useLocation } from 'react-router-dom';
-
-import { socket } from '../socket'
 
 import { countAvailableMoves, playerCanMove, shuffleBoard } from '../logic/gameLogic'
 
@@ -18,44 +15,8 @@ const defaultBoard = [
   [5, 3, 4, 1, 6, 7, 2],
   [1, 6, 7, 2, 5, 3, 4]
 ]
-export function GameRoom() {
-  const location = useLocation();
-  const { username, player_id, room_code } = location.state;
-  const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    // Listen for game updates
-    socket.on('game_status', (newStatus) => {
-      console.log("game_status")
-      console.log(newStatus.message)
-    });
-
-    // Cleanup on unmount
-    return () => {
-      socket.off('game_status');
-    };
-  }, []);
-
-  useEffect(() => {
-    // Listen for game updates
-    socket.on('game_update', (newState) => {
-      setBoard(newState.board);
-      setPlayers(newState.players);
-      setTurn(newState.turn);
-    });
-
-    // Cleanup on unmount
-    return () => {
-      socket.emit('leave_game', { username, room_code });
-    };
-  }, [username, room_code]);
-
-  useEffect(() => {
-    if (!updating) return;
-    socket.emit('move', { room_code, game_state: {board, players, turn} });
-    setUpdating(false);
-  }, [updating, room_code]);
-
+export function GameLocal() {
   const [board, setBoard] = useState(defaultBoard)
   const [players, setPlayers] = useState([
     { id: 1, colorId: 2, position: { x: -1, y: -1 }, score: 0, possibleMoves: -1 },
@@ -79,7 +40,6 @@ export function GameRoom() {
     
     setTurn(1)
     setResult(-1)
-    setUpdating(true)
   }
 
   useEffect(() => {
@@ -100,9 +60,6 @@ export function GameRoom() {
   }, [board, players])
 
   function handleClick(x: number, y: number) {
-    // comprobar que la id del cliente sea la del jugador en turno
-    if (player_id != turn) return
-
     // seleccionar al player en base al turno
     const player = players.find(p => p.id === turn)
     if (!player) return
@@ -142,21 +99,12 @@ export function GameRoom() {
 
     setBoard(newBoard)
     setTurn(newTurn)
-    setUpdating(true)
   }
 
   return (
     <div className="flex flex-col items-center">
       <div className="flex flex-col items-center font-bold text-xl">
-        <div className="flex flex-row">
-          <div className="flex flex-col text-white">
-            <h1 className='text-2xl'>Game Room: {room_code}</h1>
-            <p>Username: {username}</p>
-            <p>Player ID: {player_id}</p>
-          </div>
           <button className="bg-white m-4 p-2 rounded-md" onClick={startGame}>New Game</button>
-        </div>
-
         <Board board={board} players={players} handleClick={handleClick} />
         <div className="flex flex-row items-center">
           <div className="text-white">
@@ -181,7 +129,7 @@ export function GameRoom() {
         </div>
       </div>
 
-      {result === player_id ? <Confetti /> : null}
+      {result === 1 || result === 2 ? <Confetti /> : null}
     </div>
   )
 }
