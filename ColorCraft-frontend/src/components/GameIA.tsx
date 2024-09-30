@@ -17,6 +17,7 @@ const defaultBoard = [
 ]
 
 const APIEndPoint = 'https://colorcraft-w0ic.onrender.com/move'
+// const APIEndPoint = 'http://localhost:5000/move'
 
 export function GameIA() {
   const [board, setBoard] = useState(defaultBoard)
@@ -182,6 +183,7 @@ export function GameIA() {
           >
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
           </select>
 
           <button className="bg-white m-4 p-2 rounded-md" onClick={startGame}>New Game</button>

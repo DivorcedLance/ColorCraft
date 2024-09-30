@@ -121,34 +121,77 @@ def get_possible_states(state):
     return possible_states
 
 
-def evaluate_state(state):
+def evaluate_state(state, player_id):
     player_in_turn = [player for player in state["players"]
-                      if player['id'] == 2][0]
+                      if player['id'] == player_id][0]
     state_score = player_in_turn["possibleMoves"]
-
-    if state["turn"] == 2:
-        state_score += 10
 
     return state_score
 
+def max_difference(state, player_id, depth, accumulated_score=0):
+    # Obtener el jugador actual y su oponente
+    opponent_id = 1 if player_id == 2 else 2
+    current_turn_player_id = state["turn"]
 
-def apply_bot_move(state, difficulty):
+    # Obtener la información del jugador y del oponente
+    player_in_turn = next(player for player in state["players"] if player["id"] == player_id)
+    opponent_in_turn = next(player for player in state["players"] if player["id"] == opponent_id)
+
+    # Condición de estado ganador o perdedor
+    if opponent_in_turn["possibleMoves"] == 0 and player_in_turn["score"] > opponent_in_turn["score"]:
+        return accumulated_score + float('inf'), state  # Estado ganador
+    elif player_in_turn["possibleMoves"] == 0 and opponent_in_turn["score"] > player_in_turn["score"]:
+        return accumulated_score + float('-inf'), state  # Estado perdedor
+
+    # Si llegamos a la profundidad máxima, evaluamos el estado actual para el jugador
+    if depth == 0:
+        return accumulated_score + evaluate_state(state, player_id), state
+
+    # Obtenemos los posibles estados a partir del estado actual
     possible_states = get_possible_states(state)
 
+    # Inicializamos variables para el mejor puntaje y estado
+    best_score = float('-inf')
+    best_state = None
+
+    for next_state in possible_states:
+        # Evaluamos el próximo estado recursivamente
+        if current_turn_player_id == player_id:
+            # Es el turno de player_id, sumamos el puntaje
+            score = evaluate_state(next_state, player_id)
+            new_accumulated_score = accumulated_score + score
+        else:
+            # Es el turno del oponente, restamos el puntaje (penalización)
+            score = evaluate_state(next_state, opponent_id)
+            new_accumulated_score = accumulated_score - score
+
+        # Llamada recursiva con el puntaje acumulado
+        recursive_score, _ = max_difference(next_state, player_id, depth - 1, new_accumulated_score)
+
+        # Buscar la mayor diferencia positiva
+        if recursive_score > best_score:
+            best_score = recursive_score
+            best_state = next_state
+
+    return best_score, best_state
+
+
+def apply_bot_move(state, difficulty):
+
+    possible_states = get_possible_states(state)
     if not possible_states:
         return state
 
     if (difficulty == "easy"):
         new_state = random.choice(possible_states)
     elif (difficulty == "medium"):
-        best_state = max(possible_states, key=evaluate_state)
-        new_state = best_state
+        new_state = max(possible_states, key=lambda possible_state: evaluate_state(possible_state, state["turn"]))
+    elif (difficulty == "hard"):
+        _, new_state = max_difference(state, state["turn"], 4)
 
     return new_state
 
 # Ruta para servir la página estática
-
-
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
